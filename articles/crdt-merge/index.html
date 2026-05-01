@@ -199,57 +199,57 @@ training-free cross-family weight-merging pipeline — canonical key
 projection, per-tensor orthogonal Procrustes alignment, SVD-filtered
 delta application. One A100, ~3 hours wall clock for the full evaluation
 surface.</p>
-<table>
+<table style="border-collapse: collapse; width: 100%; margin: 1.5em 0; font-size: 15px; line-height: 1.6;">
 <thead>
-<tr class="header">
-<th>Task</th>
-<th>Anchor (SOLO)</th>
-<th>Best Merged</th>
-<th>Δ (pp)</th>
+<tr>
+<th style="border: 1px solid #ddd; padding: 10px 14px; background-color: #f8f8f8; text-align: left; font-weight: bold;">Task</th>
+<th style="border: 1px solid #ddd; padding: 10px 14px; background-color: #f8f8f8; text-align: left; font-weight: bold;">Anchor (SOLO)</th>
+<th style="border: 1px solid #ddd; padding: 10px 14px; background-color: #f8f8f8; text-align: left; font-weight: bold;">Best Merged</th>
+<th style="border: 1px solid #ddd; padding: 10px 14px; background-color: #f8f8f8; text-align: left; font-weight: bold;">Δ (pp)</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><strong>GSM8K</strong></td>
-<td>0.8120</td>
-<td><strong>0.8446</strong></td>
-<td><strong>+3.26</strong></td>
+<tr>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;"><strong>GSM8K</strong></td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">0.8120</td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;"><strong>0.8446</strong></td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;"><strong>+3.26</strong></td>
 </tr>
-<tr class="even">
-<td><strong>ARC-Challenge</strong></td>
-<td>0.5256</td>
-<td><strong>0.5572</strong></td>
-<td><strong>+3.16</strong></td>
+<tr>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;"><strong>ARC-Challenge</strong></td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">0.5256</td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;"><strong>0.5572</strong></td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;"><strong>+3.16</strong></td>
 </tr>
-<tr class="odd">
-<td>MMLU</td>
-<td>0.7180</td>
-<td>0.7094</td>
-<td>−0.86</td>
+<tr>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">MMLU</td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">0.7180</td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">0.7094</td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">−0.86</td>
 </tr>
-<tr class="even">
-<td>TruthfulQA mc2</td>
-<td>0.6475</td>
-<td>0.6285</td>
-<td>−1.90</td>
+<tr>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">TruthfulQA mc2</td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">0.6475</td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">0.6285</td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">−1.90</td>
 </tr>
-<tr class="odd">
-<td>HellaSwag</td>
-<td>0.6895</td>
-<td>0.6830</td>
-<td>−0.65</td>
+<tr>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">HellaSwag</td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">0.6895</td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">0.6830</td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">−0.65</td>
 </tr>
-<tr class="even">
-<td>PIQA</td>
-<td>0.8030</td>
-<td>0.8014</td>
-<td>−0.16</td>
+<tr>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">PIQA</td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">0.8030</td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">0.8014</td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">−0.16</td>
 </tr>
-<tr class="odd">
-<td>HumanEval pass@1</td>
-<td>0.6463</td>
-<td>0.5854</td>
-<td>−6.10</td>
+<tr>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">HumanEval pass@1</td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">0.6463</td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">0.5854</td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">−6.10</td>
 </tr>
 </tbody>
 </table>
@@ -267,49 +267,41 @@ recipe</h2>
 tolerance</strong> variant — the merge recipe with the widest tolerance
 window. But we tested four variants at different aggressiveness levels,
 and the pattern across them tells a richer story:</p>
-<table style="width:100%;">
-<colgroup>
-<col style="width: 16%" />
-<col style="width: 16%" />
-<col style="width: 16%" />
-<col style="width: 16%" />
-<col style="width: 16%" />
-<col style="width: 16%" />
-</colgroup>
+<table style="border-collapse: collapse; width: 100%; margin: 1.5em 0; font-size: 15px; line-height: 1.6;">
 <thead>
-<tr class="header">
-<th>Variant</th>
-<th>GSM8K Δ</th>
-<th>ARC-C Δ</th>
-<th>HumanEval Δ</th>
-<th>HellaSwag Δ</th>
-<th>PIQA Δ</th>
+<tr>
+<th style="border: 1px solid #ddd; padding: 10px 14px; background-color: #f8f8f8; text-align: left; font-weight: bold;">Variant</th>
+<th style="border: 1px solid #ddd; padding: 10px 14px; background-color: #f8f8f8; text-align: left; font-weight: bold;">GSM8K Δ</th>
+<th style="border: 1px solid #ddd; padding: 10px 14px; background-color: #f8f8f8; text-align: left; font-weight: bold;">ARC-C Δ</th>
+<th style="border: 1px solid #ddd; padding: 10px 14px; background-color: #f8f8f8; text-align: left; font-weight: bold;">HumanEval Δ</th>
+<th style="border: 1px solid #ddd; padding: 10px 14px; background-color: #f8f8f8; text-align: left; font-weight: bold;">HellaSwag Δ</th>
+<th style="border: 1px solid #ddd; padding: 10px 14px; background-color: #f8f8f8; text-align: left; font-weight: bold;">PIQA Δ</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td><strong>Asymmetric tolerance</strong> (widest)</td>
-<td><strong>+3.26</strong></td>
-<td><strong>+3.16</strong></td>
-<td>−6.10</td>
-<td>−0.65</td>
-<td>−0.16</td>
+<tr>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;"><strong>Asymmetric tolerance</strong> (widest)</td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;"><strong>+3.26</strong></td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;"><strong>+3.16</strong></td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">−6.10</td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">−0.65</td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">−0.16</td>
 </tr>
-<tr class="even">
-<td><strong>Aggressive uniform</strong></td>
-<td>−2.43</td>
-<td>+3.07</td>
-<td>−9.76</td>
-<td>0.00</td>
-<td>0.00</td>
+<tr>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;"><strong>Aggressive uniform</strong></td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">−2.43</td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">+3.07</td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">−9.76</td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">0.00</td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">0.00</td>
 </tr>
-<tr class="odd">
-<td><strong>Conservative uniform</strong></td>
-<td>+0.23</td>
-<td>+1.71</td>
-<td>−3.05</td>
-<td><strong>+0.15</strong></td>
-<td><strong>+0.27</strong></td>
+<tr>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;"><strong>Conservative uniform</strong></td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">+0.23</td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">+1.71</td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;">−3.05</td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;"><strong>+0.15</strong></td>
+<td style="border: 1px solid #ddd; padding: 8px 14px; text-align: left;"><strong>+0.27</strong></td>
 </tr>
 </tbody>
 </table>
