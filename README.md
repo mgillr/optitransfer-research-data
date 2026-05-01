@@ -12,7 +12,7 @@ Open resources from [Optitransfer](https://optitransfer.ch): articles, reproduci
 
 ## Articles
 
-- **[When Your Neural Networks Merge Themselves](articles/crdt-merge/)** — Cross-family weight merging using CRDT-based architecture across 26 strategies
+- **[We Merged 9 Models From 4 Architecture Families Into One — and It Beats the Anchor on Real Reasoning Benchmarks](articles/crdt-merge/)** — Cross-family weight merging lifts GSM8K (+3.3 pp), ARC-Challenge (+3.2 pp), and IFEval (+2.6 pp) on a Qwen2.5-7B-Instruct anchor using a CRDT-based pipeline across 26 strategies
 
 ## License
 
