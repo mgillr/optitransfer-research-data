@@ -1,0 +1,6 @@
+.env
+.env.*
+*.key
+*.pem
+.gh_token
+.DS_Store

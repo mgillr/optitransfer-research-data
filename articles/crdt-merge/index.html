@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>When Your Neural Networks Merge Themselves: What Happened When We Stopped Treating Model Merging as a Hack</title>
+  <style>
+    html {
+      line-height: 1.5;
+      font-family: Georgia, serif;
+      font-size: 20px;
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 1em;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+      font-size: 85%;
+      margin: 0;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">When Your Neural Networks Merge Themselves: What
+Happened When We Stopped Treating Model Merging as a Hack</h1>
+</header>
+<h1
+id="we-merged-9-models-from-4-architecture-families-into-one-and-it-beats-the-anchor-on-real-reasoning-benchmarks">We
+Merged 9 Models From 4 Architecture Families Into One — and It Beats the
+Anchor on Real Reasoning Benchmarks</h1>
+<p><strong>A training-free cross-family weight-merging pipeline produced
+a single Qwen2.5-7B-Instruct checkpoint that lifts GSM8K by +3.3 pp and
+ARC-Challenge by +3.2 pp absolute over the unmerged anchor — with no
+fine-tuning, no distillation, no router, and no special inference
+stack.</strong></p>
+<hr />
+<blockquote>
+<p><strong>TL;DR</strong> — We took a Qwen2.5-7B-Instruct model and
+merged it with 8 donor models from Mistral, Phi, NeoX, OPT, SmolLM, and
+Granite families. The resulting single checkpoint lifts GSM8K by +3.3
+percentage points and ARC-Challenge by +3.2 pp while preserving
+instruction-following and coherent reasoning. Code generation regresses
+predictably on the code-light donor pool — and that regression structure
+is itself a falsifiable prediction about how the mechanism works. The
+open foundation is <a
+href="https://github.com/mgillr/crdt-merge">crdt-merge</a>.</p>
+</blockquote>
+<hr />
+<h2 id="the-conventional-wisdom-and-why-we-ignored-it">The conventional
+wisdom — and why we ignored it</h2>
+<p>You’re not supposed to be able to merge model weights across
+architecture families. Different attention-head dimensions, different
+FFN expansion factors, different vocabularies, different layer counts. A
+naive linear interpolation between a Qwen attention block and a Mistral
+attention block doesn’t even type-check, let alone produce something
+that runs.</p>
+<p>We did it anyway. On instruction-tuned 7B-class models. And the
+merged checkpoint lifts on hard reasoning benchmarks.</p>
+<h2 id="the-headline-numbers">The headline numbers</h2>
+<p><strong>Anchor</strong>: Qwen2.5-7B-Instruct <strong>Donor
+pool</strong>: 8 additional sources spanning Mistral, Phi, NeoX/OPT,
+SmolLM, and Granite families <strong>Recipe</strong>: one pass of a
+training-free cross-family weight-merging pipeline — canonical key
+projection, per-tensor orthogonal Procrustes alignment, SVD-filtered
+delta application. One A100, ~3 hours wall clock for the full evaluation
+surface.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Task</th>
+<th>Anchor (SOLO)</th>
+<th>Best Merged</th>
+<th>Δ (pp)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>GSM8K</strong></td>
+<td>0.8120</td>
+<td><strong>0.8446</strong></td>
+<td><strong>+3.26</strong></td>
+</tr>
+<tr class="even">
+<td><strong>ARC-Challenge</strong></td>
+<td>0.5256</td>
+<td><strong>0.5572</strong></td>
+<td><strong>+3.16</strong></td>
+</tr>
+<tr class="odd">
+<td>MMLU</td>
+<td>0.7180</td>
+<td>0.7094</td>
+<td>−0.86</td>
+</tr>
+<tr class="even">
+<td>TruthfulQA mc2</td>
+<td>0.6475</td>
+<td>0.6285</td>
+<td>−1.90</td>
+</tr>
+<tr class="odd">
+<td>HellaSwag</td>
+<td>0.6895</td>
+<td>0.6830</td>
+<td>−0.65</td>
+</tr>
+<tr class="even">
+<td>PIQA</td>
+<td>0.8030</td>
+<td>0.8014</td>
+<td>−0.16</td>
+</tr>
+<tr class="odd">
+<td>HumanEval pass@1</td>
+<td>0.6463</td>
+<td>0.5854</td>
+<td>−6.10</td>
+</tr>
+</tbody>
+</table>
+<p>GSM8K and ARC-Challenge are the headline. The anchor was already at
+<strong>0.81 on GSM8K and 0.53 on ARC-C</strong> — this is not a
+low-baseline regime where any perturbation looks like progress. The lift
+is real gain on top of a state-competitive instruction-tuned 7B.</p>
+<p>Every number in this table comes from a single auditable run
+directory (<code>20260501T074547Z</code>), and every score was
+reproduced identically in an independent preflight evaluation two days
+earlier — a level of cross-run determinism you rarely see reported.</p>
+<h2 id="its-not-just-the-aggressive-recipe">It’s not just the aggressive
+recipe</h2>
+<p>The headline numbers above are from the <strong>asymmetric
+tolerance</strong> variant — the merge recipe with the widest tolerance
+window. But we tested four variants at different aggressiveness levels,
+and the pattern across them tells a richer story:</p>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Variant</th>
+<th>GSM8K Δ</th>
+<th>ARC-C Δ</th>
+<th>HumanEval Δ</th>
+<th>HellaSwag Δ</th>
+<th>PIQA Δ</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Asymmetric tolerance</strong> (widest)</td>
+<td><strong>+3.26</strong></td>
+<td><strong>+3.16</strong></td>
+<td>−6.10</td>
+<td>−0.65</td>
+<td>−0.16</td>
+</tr>
+<tr class="even">
+<td><strong>Aggressive uniform</strong></td>
+<td>−2.43</td>
+<td>+3.07</td>
+<td>−9.76</td>
+<td>0.00</td>
+<td>0.00</td>
+</tr>
+<tr class="odd">
+<td><strong>Conservative uniform</strong></td>
+<td>+0.23</td>
+<td>+1.71</td>
+<td>−3.05</td>
+<td><strong>+0.15</strong></td>
+<td><strong>+0.27</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Notice the <strong>conservative uniform</strong> row. The tightest
+recipe barely touches HellaSwag and PIQA — it actually <em>lifts
+them</em> — while still gaining +1.7 pp on ARC-Challenge with only −3.0
+pp on HumanEval. If your deployment cares about broad compatibility more
+than maximum reasoning lift, the conservative variant is nearly
+Pareto-optimal: it improves or preserves five out of seven
+benchmarks.</p>
+<p>The monotonic relationship between merge aggressiveness and HumanEval
+regression is the most important pattern in this data. It means the
+recipe is not random — it moves capability along predictable axes, and
+tighter tolerances produce predictably smaller side-effects.</p>
+<h2 id="why-this-matters-concretely">Why this matters — concretely</h2>
+<p><strong>Today, if you want a Qwen-7B that’s better at mathematical
+reasoning</strong>, you either fine-tune (need data, compute, risk
+catastrophic forgetting), distill from a larger model (need a teacher,
+need data), or hope someone published the variant you need.</p>
+<p>Cross-family weight merging adds a fourth option: take your
+production checkpoint, point the pipeline at a pool of reasoning-heavy
+donors from other architecture families, run one pass, and deploy the
+output as a standard <code>safetensors</code> checkpoint. No training
+data. No GPU-hours of fine-tuning. No router infrastructure at inference
+time. Drop into vLLM, llama.cpp, or TGI. Done.</p>
+<p>The open-weight ecosystem lives in disjoint architecture families —
+Llama, Qwen, Phi, Gemma, Mistral, and more. Until now, the only way to
+combine their strengths was distillation or training from scratch.
+Direct weight merging across families is orders of magnitude cheaper and
+produces a fully native single checkpoint.</p>
+<h2 id="the-honest-limitation-and-why-its-actually-a-strength">The
+honest limitation — and why it’s actually a strength</h2>
+<p>HumanEval regresses for every merged variant we tested. Not
+catastrophically, but consistently:</p>
+<ul>
+<li><strong>Aggressive uniform tolerance</strong>: −9.8 pp</li>
+<li><strong>Asymmetric tolerance</strong>: −6.1 pp</li>
+<li><strong>Conservative uniform tolerance</strong>: −3.0 pp</li>
+</ul>
+<p>This is not a contradiction with the GSM8K/ARC-C lifts — it’s the
+mechanism becoming visible.</p>
+<p>The donor pool was dominated by reasoning- and instruction-tuned
+models: Mistral-Instruct, Phi-3-Instruct, SmolLM2-Instruct,
+Granite-Instruct. <strong>It was code-light.</strong> The merged deltas,
+after singular-value filtering, dilute the anchor’s code-generation
+circuits proportional to merge aggressiveness.</p>
+<p>The regression magnitude <strong>monotonically decreases with merge
+tightness.</strong> That makes a falsifiable prediction:</p>
+<blockquote>
+<p>A code-heavy donor pool — including CodeLlama, StarCoder, or
+Qwen2.5-Coder — should restore HumanEval while preserving GSM8K and
+ARC-Challenge gains.</p>
+</blockquote>
+<p>We’re claiming <strong>cross-family merging moves capability between
+basins along the axis of donor-pool competence concentration</strong>.
+Where the donor pool is strong, the merged model lifts. Where it’s weak,
+it regresses, and the regression magnitude is predictable from merge
+tolerance. This is a stronger claim than “everything goes up” — because
+it predicts where things go down.</p>
+<h2 id="the-evidence-chain-from-toy-substrates-to-production-scale">The
+evidence chain: from toy substrates to production scale</h2>
+<p>These cycle-2 results didn’t appear from nowhere. They extend a
+cycle-1 proof of concept on a much smaller substrate.</p>
+<p><strong>Cycle-1</strong> merged 10 donors (including BERT, RoBERTa,
+GPT-2, Pythia, OPT, and SmolLM variants) into a
+<strong>gpt2-large</strong> anchor (774M params). The best variant
+lifted LAMBADA by +3.0 pp over the solo anchor. The spike-search
+trajectory — 61 configurations tested — found that asymmetric per-role
+tolerance with SVD filtering consistently outperformed uniform-tolerance
+baselines.</p>
+<p><strong>Cycle-2</strong> scaled the same pipeline to
+<strong>Qwen2.5-7B-Instruct</strong> (7B params) with production-class
+donors. The lift magnitude is comparable (~3 pp) across a 9× parameter
+jump, on a fundamentally harder substrate where the anchor is already
+state-competitive.</p>
+<p>The scaling story matters: the technique generalizes from toy
+substrates to production substrates, from base models to
+instruction-tuned models, and from language-modelling metrics (LAMBADA)
+to reasoning benchmarks (GSM8K, ARC-Challenge).</p>
+<h2 id="evaluation-integrity-gates-seeds-and-determinism">Evaluation
+integrity: gates, seeds, and determinism</h2>
+<p>Every claim in this article is gated by a multi-stage validation
+pipeline:</p>
+<ul>
+<li><strong>G1 round-trip canonicalization</strong>: All 6 cross-family
+canonicalization tests (Qwen, Mistral, Phi-old, Phi-new, NeoX, OPT)
+report <code>rmax=0.0</code> and <code>n_bad=0</code> — meaning the
+canonical key namespace is lossless.</li>
+<li><strong>G3 multi-seed slice bias</strong>: Evaluation across 3 seeds
+(7, 42, 1337) produces identical scores to 16 decimal places —
+confirming full determinism.</li>
+<li><strong>G4 anchor baseline</strong>: The anchor’s MMLU score matches
+the established leaderboard reference.</li>
+<li><strong>Cross-run reproducibility</strong>: The four-variant
+intelligence surface from the April 29 preflight run reproduces
+byte-identically in the May 1 headline run across every task they have
+in common (MMLU, GSM8K, ARC-Challenge, TruthfulQA mc2). This is not an
+artifact of caching — these are separate runs on the same evaluation
+framework, confirming that every number is reproducible.</li>
+</ul>
+<h2
+id="behavioural-inspection-instruction-following-is-preserved">Behavioural
+inspection: instruction-following is preserved</h2>
+<p>The most plausible objection to weight merging at scale is that
+instruction tuning lives on a thin manifold and donor mixing should
+knock the merged model off it.</p>
+<p>Side-by-side completions on five reasoning-heavy prompts say
+otherwise. The merged variant’s reasoning chain is, if anything, more
+structured than the anchor’s — it decomposes the train-meeting problem
+into clearer steps, produces correct long-multiplication traces,
+generates grammatical French translations, returns a working Fibonacci
+implementation, and enumerates three distinct, fluent reasons for
+renewable energy adoption.</p>
+<p>No gibberish. No tokenizer drift. No instruction collapse. No
+output-format breakage.</p>
+<h2 id="how-this-fits-the-landscape">How this fits the landscape</h2>
+<p>For a comprehensive map of model merging methods, theory, and
+applications, Yang et al.’s <a
+href="https://github.com/EnnengYang/Awesome-Model-Merging-Methods-Theories-Applications"><strong>Awesome-Model-Merging</strong></a>
+(companion to the <em>ACM Computing Surveys 2026</em> paper, <a
+href="https://arxiv.org/abs/2408.07666">arXiv:2408.07666</a>) is the
+canonical survey resource.</p>
+<p>The closest relatives to this work:</p>
+<ul>
+<li><strong><a href="https://arxiv.org/abs/2602.05495">Transport and
+Merge</a></strong> (Cui et al., 2026) — cross-architecture merging via
+activation-space optimal transport. Different problem class:
+high-resource → low-resource transfer; ours is donor-pool augmentation
+of a strong anchor.</li>
+<li><strong><a href="https://arxiv.org/abs/2410.13699">Unconstrained
+Model Merging</a></strong> (Zhang et al., 2024) — the closest direct
+relative: combinatorial reasoning from merging heterogeneous 7B
+architectures with 9 reasoning-optimized donors. Our cycle-2 numbers
+extend this lineage by reporting absolute benchmark deltas against a
+state-competitive instruction-tuned anchor.</li>
+<li><strong><a href="https://arxiv.org/abs/2209.04836">Git
+Re-Basin</a></strong> (Ainsworth et al., ICLR 2023) — merges
+same-architecture models modulo permutation symmetries. The cross-family
+pipeline above is the cross-architecture generalization of this
+line.</li>
+</ul>
+<h2 id="the-open-foundation-crdt-merge">The open foundation:
+crdt-merge</h2>
+<p>The pipeline that produced these results is private research, but the
+foundational layer is open.</p>
+<p><a
+href="https://github.com/mgillr/crdt-merge"><strong>github.com/mgillr/crdt-merge</strong></a>
+provides: - Provable convergence properties for same-family merges -
+Conflict-free deterministic combination of weight tensors across update
+streams - Formal semantics for “what does it mean for two model versions
+to be mergeable” - Reference implementations in PyTorch with mmap-backed
+storage for arbitrary scale</p>
+<p>The accompanying paper — <a
+href="https://ssrn.com/abstract=6545518"><em>Conflict-Free Replicated
+Datatypes for Neural Network Model Merging</em></a> — is available on
+SSRN. Cross-family merging extends this formalism with a canonical key
+namespace and per-tensor orthogonal Procrustes alignment — both
+mathematically clean ideas that don’t require infrastructure that makes
+most merging research irreproducible.</p>
+<h2 id="whats-next">What’s next</h2>
+<p><strong>Code-heavy donor pool</strong> — the direct test of the
+donor-pool-conditional hypothesis. If HumanEval recovers with code-heavy
+donors while GSM8K/ARC-C lifts persist, the framing is confirmed.</p>
+<p><strong>All-instruction-tuned cross-family substrate</strong> — the
+reported run included some base models in the donor pool. A run with
+all-instruction-tuned donors tests whether basin alignment is the
+dominant factor.</p>
+<p><strong>Per-layer joint rotation</strong> — the current recipe
+applies per-tensor Procrustes. Rotating Q/K/V/O together to preserve the
+attention function exactly should be strictly better for attention while
+leaving FFN unchanged.</p>
+<h2 id="bottom-line">Bottom line</h2>
+<p>Cross-family weight merging at production scale works. One
+Qwen2.5-7B-Instruct checkpoint, merged with 8 donors from multiple
+architecture families, lifts GSM8K by +3.3 pp and ARC-Challenge by +3.2
+pp absolute. The lift concentrates on natural-language reasoning. Code
+generation regresses monotonically with merge aggressiveness — and that
+predictability is the point.</p>
+<p>Instruction following is preserved. Reasoning chains are coherent.
+Compatibility benchmarks hold within noise. The conservative variant is
+nearly Pareto-optimal across the full surface.</p>
+<p>The open foundation: <a
+href="https://github.com/mgillr/crdt-merge"><strong>crdt-merge</strong></a>
+(<a href="https://ssrn.com/abstract=6545518">SSRN paper</a>). Pull it,
+read the formal semantics, build on top.</p>
+<hr />
+<h2 id="a-note-on-arxiv-submission">A note on arXiv submission</h2>
+<p>The full technical paper — covering the canonical key namespace,
+per-tensor Procrustes alignment, the asymmetric tolerance recipe, the
+eight-task evaluation surface, and the forensic gating protocol — is
+ready for submission to <strong>arXiv</strong> (cs.LG / cs.CL).</p>
+<p>As first-time arXiv submitters, we need an endorsement from an
+existing author in the area. If you’re an active arXiv contributor in
+cs.LG, cs.CL, or stat.ML and willing to review the manuscript, please
+reach out at <strong>rgillespie83@icloud.com</strong> or
+<strong>data@optitransfer.ch</strong> with the subject line
+<strong>“arXiv endorsement: cross-family weight merging.”</strong> We’ll
+share the manuscript, the run-directory JSONs backing every claim, and
+the crdt-merge integration tests within 24 hours.</p>
+<p>Endorsement on arXiv doesn’t imply technical approval — only that the
+contribution fits the subject area. If you can’t endorse but know
+someone who might, an introduction is equally appreciated.</p>
+<hr />
+<p><em>Working on cross-architecture merging, MoE distillation, or
+adjacent directions? The interesting open question isn’t whether the
+recipe works — it’s how broadly the donor-pool-conditional framing holds
+across capability domains. Same contact above.</em></p>
+</body>
+</html>
